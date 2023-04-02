@@ -1,46 +1,45 @@
 from django.db import models
 
+STR_LIMIT = 20
+
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
-    description = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.name[:20]
+        return self.name[:STR_LIMIT]
 
 
 class Genre(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
-    description = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
     def __str__(self):
-        return self.name[:20]
+        return self.name[:STR_LIMIT]
 
 
 class Title(models.Model):
     name = models.CharField(max_length=256)
-    year = models.DateTimeField()
+    year = models.IntegerField()
+    description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         related_name='titles',
-        blank=True, null=True
+        null=True
     )
-    genre = models.ForeignKey(
+    genre = models.ManyToManyField(
         Genre,
-        on_delete=models.SET_NULL,
-        related_name='titles',
-        blank=True, null=True
+        related_name='titles'
     )
 
     class Meta:
@@ -48,4 +47,4 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
-        return self.name[:30]
+        return self.name[:STR_LIMIT]

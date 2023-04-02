@@ -1,12 +1,19 @@
-from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter
 
-from reviews.models import Category, Genre
-from .serializers import CategorySerializer, GenreSerializer
+
+from reviews.models import Category, Genre, Title
+from .serializers import (
+    CategorySerializer,
+    GenreSerializer,
+    ReadTitleSerializer,
+    CreateTitleSerializer
+)
+from .mixins import ListCreateDeleteViewSet
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(ListCreateDeleteViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filter_backends = (SearchFilter,)
@@ -14,9 +21,21 @@ class CategoryViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(ListCreateDeleteViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = ReadTitleSerializer
+    filter_backends = (SearchFilter, DjangoFilterBackend,)
+    filterset_fields = ('category', 'genre', 'year', 'name',)
+
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'list', 'destroy']:
+            return ReadTitleSerializer
+        return CreateTitleSerializer
