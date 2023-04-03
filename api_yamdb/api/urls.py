@@ -1,15 +1,22 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
-from .views import CategoryViewSet, GenreViewSet, TitleViewSet
+from .views import APIGetToken, APISignup, UsersViewSet, CategoryViewSet, GenreViewSet, TitleViewSet
 
-v1_router = DefaultRouter()
+router = SimpleRouter()
 
-v1_router.register(r'v1/categories', CategoryViewSet)
-v1_router.register(r'v1/genres', GenreViewSet)
-v1_router.register(r'v1/titles', TitleViewSet)
+router.register(
+    'users',
+    UsersViewSet,
+    basename='users'
+)
+router.register(r'categories', CategoryViewSet)
+router.register(r'genres', GenreViewSet)
+router.register(r'titles', TitleViewSet)
 
 
 urlpatterns = [
-    path('', include(v1_router.urls)),
+    path('v1/auth/token/', APIGetToken.as_view(), name='get_token'),
+    path('v1/', include(router.urls)),
+    path('v1/auth/signup/', APISignup.as_view(), name='signup'),
 ]
