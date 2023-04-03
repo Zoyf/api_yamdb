@@ -1,7 +1,5 @@
-from django.shortcuts import render
 from django.core.mail import EmailMessage
 from django.db.models import Avg
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -11,14 +9,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Genre, Title, User
 
-from reviews.models import User
-
-
+from .mixins import ListCreateDeleteViewSet
 from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
                           IsAdminUserOrReadOnly)
-from .serializers import (GetTokenSerializer,NotAdminSerializer, 
-                          SignUpSerializer,  UsersSerializer)
+from .serializers import (CategorySerializer, CreateTitleSerializer,
+                          GenreSerializer, GetTokenSerializer,
+                          NotAdminSerializer, ReadTitleSerializer,
+                          SignUpSerializer, UsersSerializer)
+
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -116,3 +116,34 @@ class APISignup(APIView):
         }
         self.send_email(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CategoryViewSet(ListCreateDeleteViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = (SearchFilter,)
+    permission_classes = (IsAdminUserOrReadOnly,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class GenreViewSet(ListCreateDeleteViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    filter_backends = (SearchFilter,)
+    permission_classes = (IsAdminUserOrReadOnly,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = ReadTitleSerializer
+    filter_backends = (SearchFilter, DjangoFilterBackend,)
+    permission_classes = (IsAdminUserOrReadOnly,)
+    filterset_fields = ('category', 'genre', 'year', 'name',)
+
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'list', 'destroy']:
+            return ReadTitleSerializer
+        return CreateTitleSerializer

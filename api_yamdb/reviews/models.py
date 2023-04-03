@@ -6,6 +6,7 @@ from django.dispatch import receiver
 
 from .validators import validate_username
 
+STR_LIMIT = 20
 USER = 'user'
 ADMIN = 'admin'
 MODERATOR = 'moderator'
@@ -90,16 +91,53 @@ def post_save(sender, instance, created, **kwargs):
         instance.confirmation_code = confirmation_code
         instance.save()
 
+
 class Category(models.Model):
-    pass
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+
+    def __str__(self):
+        return self.name[:STR_LIMIT]
 
 
 class Genre(models.Model):
-    pass
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+
+    def __str__(self):
+        return self.name[:STR_LIMIT]
 
 
 class Title(models.Model):
-    pass
+    name = models.CharField(max_length=256)
+    year = models.IntegerField()
+    description = models.TextField(blank=True, null=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        related_name='titles',
+        null=True
+    )
+    genre = models.ManyToManyField(
+        Genre,
+        related_name='titles'
+    )
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+
+    def __str__(self):
+        return self.name[:STR_LIMIT]
+
 
 class Review(models.Model):
     pass
