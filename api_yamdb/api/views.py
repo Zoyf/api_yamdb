@@ -1,5 +1,6 @@
 from django.core.mail import EmailMessage
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -17,7 +18,8 @@ from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
 from .serializers import (CategorySerializer, CreateTitleSerializer,
                           GenreSerializer, GetTokenSerializer,
                           NotAdminSerializer, ReadTitleSerializer,
-                          SignUpSerializer, UsersSerializer)
+                          SignUpSerializer, UsersSerializer,
+                          ReviewSerializer)
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -147,3 +149,17 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ['retrieve', 'list', 'destroy']:
             return ReadTitleSerializer
         return CreateTitleSerializer
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [AdminModeratorAuthorPermission, ]
+
+    def get_queryset(self):
+        title_id = self.kwargs.get("title_id")
+        title = get_object_or_404(Title, id=title_id)
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
+        serializer.save(author=self.request.user, title=title)

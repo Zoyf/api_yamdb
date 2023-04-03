@@ -3,6 +3,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from .validators import validate_username
 
@@ -140,7 +141,33 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    pass
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    pub_date = models.DateTimeField('Дата добавления', auto_now_add=True)
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    score = models.IntegerField(validators=[MinValueValidator(1),
+                                MaxValueValidator(10)])
+
+    class Meta:
+        ordering = ('-pub_date',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_relationships'
+            ),
+        ]
+
+    def __str__(self):
+        return self.text
+
 
 class Comment(models.Model):
     pass
