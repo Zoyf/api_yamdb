@@ -1,5 +1,5 @@
 from django.core.mail import EmailMessage
-from django.db.models import Avg
+import uuid
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
@@ -8,7 +8,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from django.db import IntegrityError
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title, User, Review
 
@@ -103,20 +103,32 @@ class APISignup(APIView):
             to=[data['to_email']]
         )
         email.send()
-
+    
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        username = serializer.validated_data['username']
+        try:
+            user, create = User.objects.get_or_create(
+                username=username,
+                email=email
+            )
+        except :
+            pass
+        #confirmation_code = str(uuid.uuid4())
+        #user.confirmation_code = confirmation_code
+        user.save()
         user = serializer.save()
-        email_body = (
-            f'Доброе время суток, {user.username}.'
-            f'\nКод подтверждения для доступа к API: {user.confirmation_code}'
-        )
-        data = {
-            'email_body': email_body,
-            'to_email': user.email,
-            'email_subject': 'Код подтверждения для доступа к API!'
-        }
+        email_body = (                                                          ####
+            f'Доброе время суток, {user.username}.'                               ####
+            f'\nКод подтверждения для доступа к API: {user.confirmation_code}'    ####
+        )                                                                         ####
+        data = {                                                                  ####
+            'email_body': email_body,                                             ####
+            'to_email': user.email,                                               ####
+            'email_subject': 'Код подтверждения для доступа к API!'               ####
+        }                                                                       ####
         self.send_email(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
