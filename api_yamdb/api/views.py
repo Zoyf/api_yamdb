@@ -140,7 +140,9 @@ class GenreViewSet(ListCreateDeleteViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.order_by('id').annotate(
+        rating=Avg('reviews__score')
+    )
     serializer_class = ReadTitleSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend,)
     permission_classes = (IsAdminUserOrReadOnly,)
