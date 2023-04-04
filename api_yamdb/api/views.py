@@ -20,6 +20,7 @@ from .serializers import (CategorySerializer, CreateTitleSerializer,
                           NotAdminSerializer, ReadTitleSerializer,
                           SignUpSerializer, UsersSerializer,
                           ReviewSerializer, CommentSerializer)
+from .filters import TitleFilter
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -144,12 +145,15 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = ReadTitleSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend,)
     permission_classes = (IsAdminUserOrReadOnly,)
-    filterset_fields = ('category', 'genre', 'year', 'name',)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'list', 'destroy']:
             return ReadTitleSerializer
         return CreateTitleSerializer
+
+    class Meta:
+        ordering = ['-id']
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
