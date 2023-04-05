@@ -157,7 +157,7 @@ class APISignup(APIView):
 
 
 class CategoryViewSet(ListCreateDeleteViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by('id')
     serializer_class = CategorySerializer
     filter_backends = (SearchFilter,)
     permission_classes = (IsAdminUserOrReadOnly,)
@@ -166,7 +166,7 @@ class CategoryViewSet(ListCreateDeleteViewSet):
 
 
 class GenreViewSet(ListCreateDeleteViewSet):
-    queryset = Genre.objects.all()
+    queryset = Genre.objects.all().order_by('id')
     serializer_class = GenreSerializer
     filter_backends = (SearchFilter,)
     permission_classes = (IsAdminUserOrReadOnly,)
