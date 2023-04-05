@@ -17,11 +17,13 @@ from reviews.models import Category, Genre, Review, Title, User
 from .mixins import ListCreateDeleteViewSet
 from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
                           IsAdminUserOrReadOnly)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          CreateTitleSerializer, GenreSerializer,
-                          GetTokenSerializer, NotAdminSerializer,
-                          ReadTitleSerializer, ReviewSerializer,
-                          SignUpSerializer, UsersSerializer)
+                          
+from .serializers import (CategorySerializer, CreateTitleSerializer,
+                          GenreSerializer, GetTokenSerializer,
+                          NotAdminSerializer, ReadTitleSerializer,
+                          SignUpSerializer, UsersSerializer,
+                          ReviewSerializer, CommentSerializer)
+from .filters import TitleFilter
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -173,16 +175,21 @@ class GenreViewSet(ListCreateDeleteViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.order_by('id').annotate(
+        rating=Avg('reviews__score')
+    )
     serializer_class = ReadTitleSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend,)
     permission_classes = (IsAdminUserOrReadOnly,)
-    filterset_fields = ('category', 'genre', 'year', 'name',)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'list', 'destroy']:
             return ReadTitleSerializer
         return CreateTitleSerializer
+
+    class Meta:
+        ordering = ['-id']
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
