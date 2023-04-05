@@ -1,5 +1,8 @@
-from django.core.mail import EmailMessage
+import re
 import uuid
+
+from django.core.mail import EmailMessage
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
@@ -8,18 +11,17 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db import IntegrityError
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Genre, Title, User, Review
+from reviews.models import Category, Genre, Review, Title, User
 
 from .mixins import ListCreateDeleteViewSet
 from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
                           IsAdminUserOrReadOnly)
-from .serializers import (CategorySerializer, CreateTitleSerializer,
-                          GenreSerializer, GetTokenSerializer,
-                          NotAdminSerializer, ReadTitleSerializer,
-                          SignUpSerializer, UsersSerializer,
-                          ReviewSerializer, CommentSerializer)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          CreateTitleSerializer, GenreSerializer,
+                          GetTokenSerializer, NotAdminSerializer,
+                          ReadTitleSerializer, ReviewSerializer,
+                          SignUpSerializer, UsersSerializer)
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -103,33 +105,52 @@ class APISignup(APIView):
             to=[data['to_email']]
         )
         email.send()
-    
+
+
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         email = serializer.validated_data['email']
         username = serializer.validated_data['username']
-        try:
-            user, create = User.objects.get_or_create(
-                username=username,
-                email=email
-            )
-        except :
-            pass
-        #confirmation_code = str(uuid.uuid4())
-        #user.confirmation_code = confirmation_code
-        user.save()
-        user = serializer.save()
-        email_body = (                                                          ####
-            f'Доброе время суток, {user.username}.'                               ####
-            f'\nКод подтверждения для доступа к API: {user.confirmation_code}'    ####
-        )                                                                         ####
-        data = {                                                                  ####
-            'email_body': email_body,                                             ####
-            'to_email': user.email,                                               ####
-            'email_subject': 'Код подтверждения для доступа к API!'               ####
-        }                                                                       ####
+
+        if username == 'me':
+            return Response('Регистрация <me> запрещена!', status=status.HTTP_400_BAD_REQUEST)
+        
+        if not re.match(r'^[\w.@+-]+$', username):
+            return Response({'error': 'Invalid username format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        existing_user = User.objects.filter(email=email).first()
+        if existing_user:
+            if existing_user.username != username: 
+                return Response('Пользователь с таким email уже существует', status=status.HTTP_400_BAD_REQUEST)
+
+        existing_user = User.objects.filter(username=username).first()
+        if existing_user:
+            if existing_user.email != email: 
+                return Response('Пользователь с таким username уже существует', status=status.HTTP_400_BAD_REQUEST)
+
+        user, created = User.objects.get_or_create(
+            username=username,
+            email=email,
+            defaults={'confirmation_code': str(uuid.uuid4())}
+        )
+
+        if not created:
+            user.confirmation_code = str(uuid.uuid4())
+            user.save()
+
+        email_body = (
+            f'Доброе время суток, {user.username}.' 
+            f'\nКод подтверждения для доступа к API: {user.confirmation_code}'
+        )
+        data = {
+            'email_body': email_body,
+            'to_email': user.email,
+            'email_subject': 'Код подтверждения для доступа к API!'
+        }
         self.send_email(data)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
