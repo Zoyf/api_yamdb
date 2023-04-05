@@ -1,3 +1,6 @@
+import re
+import uuid
+
 from django.core.mail import EmailMessage
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -8,13 +11,13 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Genre, Title, User, Review
+from reviews.models import Category, Genre, Review, Title, User
 
 from .mixins import ListCreateDeleteViewSet
 from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
                           IsAdminUserOrReadOnly)
+                          
 from .serializers import (CategorySerializer, CreateTitleSerializer,
                           GenreSerializer, GetTokenSerializer,
                           NotAdminSerializer, ReadTitleSerializer,
@@ -105,12 +108,42 @@ class APISignup(APIView):
         )
         email.send()
 
+
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+
+        email = serializer.validated_data['email']
+        username = serializer.validated_data['username']
+
+        if username == 'me':
+            return Response('Регистрация <me> запрещена!', status=status.HTTP_400_BAD_REQUEST)
+        
+        if not re.match(r'^[\w.@+-]+$', username):
+            return Response({'error': 'Invalid username format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        existing_user = User.objects.filter(email=email).first()
+        if existing_user:
+            if existing_user.username != username: 
+                return Response('Пользователь с таким email уже существует', status=status.HTTP_400_BAD_REQUEST)
+
+        existing_user = User.objects.filter(username=username).first()
+        if existing_user:
+            if existing_user.email != email: 
+                return Response('Пользователь с таким username уже существует', status=status.HTTP_400_BAD_REQUEST)
+
+        user, created = User.objects.get_or_create(
+            username=username,
+            email=email,
+            defaults={'confirmation_code': str(uuid.uuid4())}
+        )
+
+        if not created:
+            user.confirmation_code = str(uuid.uuid4())
+            user.save()
+
         email_body = (
-            f'Доброе время суток, {user.username}.'
+            f'Доброе время суток, {user.username}.' 
             f'\nКод подтверждения для доступа к API: {user.confirmation_code}'
         )
         data = {
@@ -119,6 +152,7 @@ class APISignup(APIView):
             'email_subject': 'Код подтверждения для доступа к API!'
         }
         self.send_email(data)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
