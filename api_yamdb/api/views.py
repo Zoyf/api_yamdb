@@ -115,13 +115,6 @@ class APISignup(APIView):
         email = serializer.validated_data['email']
         username = serializer.validated_data['username']
 
-        if username == 'me':
-            return Response('Регистрация <me> запрещена!',
-                            status=status.HTTP_400_BAD_REQUEST)
-        if not re.match(r'^[\w.@+-]+$', username):
-            return Response({'error': 'Invalid username format'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
         existing_user = User.objects.filter(email=email).first()
         if existing_user:
             if existing_user.username != username:

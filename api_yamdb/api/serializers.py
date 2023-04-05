@@ -3,6 +3,7 @@ import datetime as dt
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review, Title, User
+from reviews.validators import validate_username
 
 
 class UsersSerializer(serializers.ModelSerializer):
@@ -39,6 +40,11 @@ class GetTokenSerializer(serializers.ModelSerializer):
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
     username = serializers.CharField(max_length=150)
+
+    def validate(self, data):
+        username = data['username']
+        validate_username(username)
+        return data
 
 
 class CategorySerializer(serializers.ModelSerializer):
