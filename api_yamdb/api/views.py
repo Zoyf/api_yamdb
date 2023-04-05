@@ -1,4 +1,3 @@
-import re
 import uuid
 
 from django.core.mail import EmailMessage
@@ -133,7 +132,7 @@ class APISignup(APIView):
             defaults={'confirmation_code': str(uuid.uuid4())}
         )
 
-        if not created:
+        if not user:
             user.confirmation_code = str(uuid.uuid4())
             user.save()
 
