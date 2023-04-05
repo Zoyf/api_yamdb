@@ -17,7 +17,7 @@ from reviews.models import Category, Genre, Review, Title, User
 from .mixins import ListCreateDeleteViewSet
 from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
                           IsAdminUserOrReadOnly)
-                          
+
 from .serializers import (CategorySerializer, CreateTitleSerializer,
                           GenreSerializer, GetTokenSerializer,
                           NotAdminSerializer, ReadTitleSerializer,
@@ -108,7 +108,6 @@ class APISignup(APIView):
         )
         email.send()
 
-
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -117,20 +116,23 @@ class APISignup(APIView):
         username = serializer.validated_data['username']
 
         if username == 'me':
-            return Response('Регистрация <me> запрещена!', status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response('Регистрация <me> запрещена!',
+                            status=status.HTTP_400_BAD_REQUEST)
         if not re.match(r'^[\w.@+-]+$', username):
-            return Response({'error': 'Invalid username format'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid username format'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         existing_user = User.objects.filter(email=email).first()
         if existing_user:
-            if existing_user.username != username: 
-                return Response('Пользователь с таким email уже существует', status=status.HTTP_400_BAD_REQUEST)
+            if existing_user.username != username:
+                return Response('Пользователь с таким email уже существует',
+                                status=status.HTTP_400_BAD_REQUEST)
 
         existing_user = User.objects.filter(username=username).first()
         if existing_user:
-            if existing_user.email != email: 
-                return Response('Пользователь с таким username уже существует', status=status.HTTP_400_BAD_REQUEST)
+            if existing_user.email != email:
+                return Response('Пользователь с таким username уже существует',
+                                status=status.HTTP_400_BAD_REQUEST)
 
         user, created = User.objects.get_or_create(
             username=username,
@@ -143,7 +145,7 @@ class APISignup(APIView):
             user.save()
 
         email_body = (
-            f'Доброе время суток, {user.username}.' 
+            f'Доброе время суток, {user.username}.'
             f'\nКод подтверждения для доступа к API: {user.confirmation_code}'
         )
         data = {
