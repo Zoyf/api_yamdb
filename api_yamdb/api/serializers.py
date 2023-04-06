@@ -68,7 +68,7 @@ class ReadTitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('__all__')
+        fields = '__all__'
 
 
 class CreateTitleSerializer(serializers.ModelSerializer):
@@ -84,7 +84,7 @@ class CreateTitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('__all__')
+        fields = '__all__'
         validators = [
             UniqueTogetherValidator(
                 queryset=Title.objects.all(),

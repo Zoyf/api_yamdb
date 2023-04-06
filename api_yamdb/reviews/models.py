@@ -4,6 +4,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from .validators import validate_username
 
@@ -62,6 +64,14 @@ class User(AbstractUser):
         default='XXXX'
     )
 
+    class Meta:
+        ordering = ('id',)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return self.username
+
     @property
     def is_user(self):
         return self.role == USER
@@ -73,14 +83,6 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == MODERATOR
-
-    class Meta:
-        ordering = ('id',)
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
-
-    def __str__(self):
-        return self.username
 
 
 @receiver(post_save, sender=User)
@@ -119,7 +121,7 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.CharField(max_length=256)
-    year = models.IntegerField()
+    year = models.PositiveSmallIntegerField()
     description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
         Category,
@@ -139,6 +141,13 @@ class Title(models.Model):
     def __str__(self):
         return self.name[:STR_LIMIT]
 
+    def clean_year(self):
+        if self.year > timezone.now().year:
+            raise ValidationError(
+                'Год не может быть больше текущего года.',
+                code='invalid_year'
+            )
+
 
 class Review(models.Model):
     text = models.TextField()
@@ -153,8 +162,12 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-    score = models.IntegerField(validators=[MinValueValidator(1),
-                                MaxValueValidator(10)])
+    score = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(1, message='Оценка должна быть не менее 1'),
+            MaxValueValidator(10, message='Оценка должна быть не более 10'),
+        ]
+    )
 
     class Meta:
         ordering = ('-pub_date',)
@@ -164,6 +177,8 @@ class Review(models.Model):
                 name='unique_relationships'
             ),
         ]
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
     def __str__(self):
         return self.text
@@ -180,3 +195,5 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ('id', )
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'

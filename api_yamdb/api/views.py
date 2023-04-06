@@ -1,4 +1,3 @@
-import re
 import uuid
 
 from django.core.mail import EmailMessage
@@ -115,14 +114,16 @@ class APISignup(APIView):
         email = serializer.validated_data['email']
         username = serializer.validated_data['username']
 
-        existing_user = User.objects.filter(email=email).first()
+        existing_user = User.objects.filter(email=email)
         if existing_user:
+            existing_user = existing_user.first()
             if existing_user.username != username:
                 return Response('Пользователь с таким email уже существует',
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        existing_user = User.objects.filter(username=username).first()
+        existing_user = User.objects.filter(username=username)
         if existing_user:
+            existing_user = existing_user.first()
             if existing_user.email != email:
                 return Response('Пользователь с таким username уже существует',
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -152,29 +153,33 @@ class APISignup(APIView):
 
 
 class CategoryViewSet(ListCreateDeleteViewSet):
-    queryset = Category.objects.all().order_by('id')
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filter_backends = (SearchFilter,)
+    ordering_fields = ['id']
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
 
 class GenreViewSet(ListCreateDeleteViewSet):
-    queryset = Genre.objects.all().order_by('id')
+    queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (SearchFilter,)
+    ordering_fields = ['id']
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.order_by('id').annotate(
+    queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
     )
     serializer_class = ReadTitleSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend,)
+    ordering_fields = ['id']
+    ordering = ['-id']
     permission_classes = (IsAdminUserOrReadOnly,)
     filterset_class = TitleFilter
 
@@ -182,9 +187,6 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ['retrieve', 'list', 'destroy']:
             return ReadTitleSerializer
         return CreateTitleSerializer
-
-    class Meta:
-        ordering = ['-id']
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
