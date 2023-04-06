@@ -11,18 +11,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from reviews.models import Category, Genre, Review, Title, User
 
+from .filters import TitleFilter
 from .mixins import ListCreateDeleteViewSet
 from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
                           IsAdminUserOrReadOnly)
-
-from .serializers import (CategorySerializer, CreateTitleSerializer,
-                          GenreSerializer, GetTokenSerializer,
-                          NotAdminSerializer, ReadTitleSerializer,
-                          SignUpSerializer, UsersSerializer,
-                          ReviewSerializer, CommentSerializer)
-from .filters import TitleFilter
+from .serializers import (CategorySerializer, CommentSerializer,
+                          CreateTitleSerializer, GenreSerializer,
+                          GetTokenSerializer, NotAdminSerializer,
+                          ReadTitleSerializer, ReviewSerializer,
+                          SignUpSerializer, UsersSerializer)
 
 
 class UsersViewSet(viewsets.ModelViewSet):
