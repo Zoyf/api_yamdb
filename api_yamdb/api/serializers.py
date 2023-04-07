@@ -2,6 +2,7 @@ import datetime as dt
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from reviews.validators import validate_username
 
@@ -68,7 +69,7 @@ class ReadTitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('__all__')
+        fields = '__all__'
 
 
 class CreateTitleSerializer(serializers.ModelSerializer):
@@ -84,7 +85,7 @@ class CreateTitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('__all__')
+        fields = '__all__'
         validators = [
             UniqueTogetherValidator(
                 queryset=Title.objects.all(),
