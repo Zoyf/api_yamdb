@@ -11,18 +11,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from reviews.models import Category, Genre, Review, Title, User
 
+from .filters import TitleFilter
 from .mixins import ListCreateDeleteViewSet
 from .permissions import (AdminModeratorAuthorPermission, AdminOnly,
                           IsAdminUserOrReadOnly)
-
-from .serializers import (CategorySerializer, CreateTitleSerializer,
-                          GenreSerializer, GetTokenSerializer,
-                          NotAdminSerializer, ReadTitleSerializer,
-                          SignUpSerializer, UsersSerializer,
-                          ReviewSerializer, CommentSerializer)
-from .filters import TitleFilter
+from .serializers import (CategorySerializer, CommentSerializer,
+                          CreateTitleSerializer, GenreSerializer,
+                          GetTokenSerializer, NotAdminSerializer,
+                          ReadTitleSerializer, ReviewSerializer,
+                          SignUpSerializer, UsersSerializer)
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -114,14 +114,16 @@ class APISignup(APIView):
         email = serializer.validated_data['email']
         username = serializer.validated_data['username']
 
-        existing_user = User.objects.filter(email=email).first()
+        existing_user = User.objects.filter(email=email)
         if existing_user:
+            existing_user = existing_user.first()
             if existing_user.username != username:
                 return Response('Пользователь с таким email уже существует',
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        existing_user = User.objects.filter(username=username).first()
+        existing_user = User.objects.filter(username=username)
         if existing_user:
+            existing_user = existing_user.first()
             if existing_user.email != email:
                 return Response('Пользователь с таким username уже существует',
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -132,7 +134,7 @@ class APISignup(APIView):
             defaults={'confirmation_code': str(uuid.uuid4())}
         )
 
-        if not created:
+        if not user:
             user.confirmation_code = str(uuid.uuid4())
             user.save()
 
@@ -151,29 +153,33 @@ class APISignup(APIView):
 
 
 class CategoryViewSet(ListCreateDeleteViewSet):
-    queryset = Category.objects.all().order_by('id')
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filter_backends = (SearchFilter,)
+    ordering_fields = ['id']
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
 
 class GenreViewSet(ListCreateDeleteViewSet):
-    queryset = Genre.objects.all().order_by('id')
+    queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (SearchFilter,)
+    ordering_fields = ['id']
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.order_by('id').annotate(
+    queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
     )
     serializer_class = ReadTitleSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend,)
+    ordering_fields = ['id']
+    ordering = ['-id']
     permission_classes = (IsAdminUserOrReadOnly,)
     filterset_class = TitleFilter
 
@@ -181,9 +187,6 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ['retrieve', 'list', 'destroy']:
             return ReadTitleSerializer
         return CreateTitleSerializer
-
-    class Meta:
-        ordering = ['-id']
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
