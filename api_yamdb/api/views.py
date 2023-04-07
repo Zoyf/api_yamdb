@@ -134,7 +134,7 @@ class APISignup(APIView):
             defaults={'confirmation_code': str(uuid.uuid4())}
         )
 
-        if not user:
+        if not created:
             user.confirmation_code = str(uuid.uuid4())
             user.save()
 
