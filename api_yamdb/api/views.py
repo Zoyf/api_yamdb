@@ -134,7 +134,7 @@ class APISignup(APIView):
             defaults={'confirmation_code': str(uuid.uuid4())}
         )
 
-        if not user:
+        if not created:
             user.confirmation_code = str(uuid.uuid4())
             user.save()
 
@@ -155,19 +155,21 @@ class APISignup(APIView):
 class CategoryViewSet(ListCreateDeleteViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    filter_backends = (SearchFilter,)
+    filter_backends = (SearchFilter, OrderingFilter)
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    ordering = ['id']
 
 
 class GenreViewSet(ListCreateDeleteViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    filter_backends = (SearchFilter,)
+    filter_backends = (SearchFilter, OrderingFilter)
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    ordering = ['id']
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -175,9 +177,11 @@ class TitleViewSet(viewsets.ModelViewSet):
         rating=Avg('reviews__score')
     )
     serializer_class = ReadTitleSerializer
-    filter_backends = (SearchFilter, DjangoFilterBackend,)
+    filter_backends = (SearchFilter, DjangoFilterBackend, OrderingFilter)
     permission_classes = (IsAdminUserOrReadOnly,)
     filterset_class = TitleFilter
+    ordering_fields = ['year', 'name']
+    ordering = ['id']
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'list', 'destroy']:
