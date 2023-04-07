@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -155,8 +155,8 @@ class APISignup(APIView):
 class CategoryViewSet(ListCreateDeleteViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    filter_backends = (SearchFilter,)
-    ordering_fields = ['id']
+    filter_backends = (SearchFilter, OrderingFilter)
+    ordering = ['id']
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -165,8 +165,8 @@ class CategoryViewSet(ListCreateDeleteViewSet):
 class GenreViewSet(ListCreateDeleteViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    filter_backends = (SearchFilter,)
-    ordering_fields = ['id']
+    filter_backends = (SearchFilter, OrderingFilter)
+    ordering = ['id']
     permission_classes = (IsAdminUserOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -177,7 +177,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         rating=Avg('reviews__score')
     )
     serializer_class = ReadTitleSerializer
-    filter_backends = (SearchFilter, DjangoFilterBackend,)
+    filter_backends = (SearchFilter, DjangoFilterBackend, OrderingFilter)
     ordering_fields = ['id']
     ordering = ['-id']
     permission_classes = (IsAdminUserOrReadOnly,)
